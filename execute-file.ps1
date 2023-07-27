@@ -1,28 +1,33 @@
 Param(
 	[Parameter(Mandatory)]
-	[string]$FileName,
-	[string]$OutputName
+	[string]$InputPath,
+	[string]$OutputPath
 )
 
-
-If(-Not (Test-Path $FileName)){
-	Throw "The file directory $FileName does not exist"
+If(-Not (Test-Path $InputPath)){
+	Throw "The file directory $InputPath does not exist"
 	exit
-}ElseIf((Get-Item $FileName).Extension -ne ".kt"){
-	Throw "The file not is a kotlin file"
 }
 
-# Check the outputfile:
-
-If(-not $OutputName){
-	$OutputName = [System.IO.Path]::ChangeExtension($FileName, "jar")
+If(-not $OutputPath){
+	If(Test-Path $InputPath -PathType 'Leaf'){
+		$OutputPath = [System.IO.Path]::ChangeExtension($InputPath, "jar")
+	}Else{
+		$OutputPath = "main.jar"
+	}
 }
-
 
 Write-Host "Compiling...."
-& kotlinc $FileName -include-runtime -d $OutputName 
+& kotlinc $InputPath -include-runtime -d $OutputPath 
+
+If($LASTEXITCODE -ne 0){
+	Write-Host "The compiling was failed"
+	exit 1
+}
+
+
 
 Write-Host "Running..."
-& java -jar $OutputName 
+& java -jar $OutputPath 
 
-& ri -Force $OutputName
+& ri -Force $OutputPath	
